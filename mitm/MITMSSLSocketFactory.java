@@ -140,30 +140,45 @@ public final class MITMSSLSocketFactory implements MITMSocketFactory
 	// TODO: is it subject or issuer?
 	Principal ourDN = certificate.getSubjectX500Principal();
 
-	// . . .
-	System.out.println("Passed things " + serverDN);
-	/*
-	iaik.x509.X509Certificate serverCertificate = // . . .
+	iaik.x509.X509Certificate serverCertificate = 
+	    getServerCert(certificate, ourDN, serverDN, serialNumber, privateKey);
 
 	// . . .
 	/*
-	KeyStore serverKeyStore = KeyStore.getInstance(keyStoreType);
+	  KeyStore serverKeyStore = KeyStore.getInstance(keyStoreType);
 
-	// . . .
+	  // . . .
 	
-	final KeyManagerFactory keyManagerFactory =
-	    KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-	keyManagerFactory.init(serverKeyStore, emptyPassword);
+	  final KeyManagerFactory keyManagerFactory =
+	  KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+	  keyManagerFactory.init(serverKeyStore, emptyPassword);
 
-	m_sslContext = SSLContext.getInstance("SSL");
-	m_sslContext.init(keyManagerFactory.getKeyManagers(),
-			  new TrustManager[] { new TrustEveryone() },
-			  null);
+	  m_sslContext = SSLContext.getInstance("SSL");
+	  m_sslContext.init(keyManagerFactory.getKeyManagers(),
+	  new TrustManager[] { new TrustEveryone() },
+	  null);
 
-	m_clientSocketFactory = // . . .
-	m_serverSocketFactory = // . . .
+	  m_clientSocketFactory = // . . .
+	  m_serverSocketFactory = // . . .
 
 	*/
+    }
+
+    private iaik.x509.X509Certificate getServerCert(iaik.x509.X509Certificate ourCert, Principal ourDN, Principal serverDN, BigInteger serialNumber, PrivateKey pk) {
+	try {
+	    iaik.x509.X509Certificate serverCert =
+		new iaik.x509.X509Certificate(ourCert.getEncoded()); // copy our cert
+	    AlgorithmID algo = serverCert.getSignatureAlgorithm();
+
+	    serverCert.setIssuerDN(serverDN);
+	    serverCert.setSerialNumber(serialNumber);
+	    serverCert.sign(algo, pk);
+	    return serverCert;
+
+	} catch (Exception e) {
+	    System.err.println(e);
+	    return null;
+	}
     }
 
     public final ServerSocket createServerSocket(String localHost,
@@ -173,7 +188,7 @@ public final class MITMSSLSocketFactory implements MITMSocketFactory
     {
 	final SSLServerSocket socket =
 	    (SSLServerSocket)m_serverSocketFactory.createServerSocket(
-		localPort, 50, InetAddress.getByName(localHost));
+								      localPort, 50, InetAddress.getByName(localHost));
 
 	socket.setSoTimeout(timeout);
 
