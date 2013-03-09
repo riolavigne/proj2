@@ -18,7 +18,6 @@ public class MITMAdminClient
     private String commonName = "";
     
     public static void main( String [] args ) {
-	System.err.println("Start...");
 	MITMAdminClient admin = new MITMAdminClient( args );
 	admin.run();
     }
@@ -61,7 +60,6 @@ public class MITMAdminClient
 
 
     private MITMAdminClient( String [] args ) {
-	System.out.println("here..");
 	int remotePort = 8002;
 	String remoteHost = "localhost";
 		
