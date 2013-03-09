@@ -114,8 +114,6 @@ public final class MITMSSLSocketFactory implements MITMSocketFactory
 	final String keyStoreFile = System.getProperty(JSSEConstants.KEYSTORE_PROPERTY);
 	final char[] keyStorePassword = System.getProperty(JSSEConstants.KEYSTORE_PASSWORD_PROPERTY, "").toCharArray();
 	final String keyStoreType = System.getProperty(JSSEConstants.KEYSTORE_TYPE_PROPERTY, "jks");
-	System.out.println("INFO: " + keyStoreFile + "\n\t" + keyStorePassword + "\n\t" +
-			   keyStoreType);
 
 	// The "alias" is the name of the key pair in our keystore. (default: "mykey")
 	String alias = System.getProperty(JSSEConstants.KEYSTORE_ALIAS_PROPERTY, "mykey");
@@ -127,28 +125,23 @@ public final class MITMSSLSocketFactory implements MITMSocketFactory
 	    keyStore.load(new FileInputStream(keyStoreFile), keyStorePassword);
 	    
 	    this.ks = keyStore;
-	    System.out.println("File loading stuff: " + keyStore + "\n\t: " + alias);
 	} else {
 	    keyStore = null;
 	}
 	
 	// Get our key pair and our own DN (not the remote server's DN) from the keystore.
 	PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, keyStorePassword); 
-	System.out.println("sk: " + privateKey);
 	
 	iaik.x509.X509Certificate certificate = new
 	    iaik.x509.X509Certificate(keyStore.getCertificate(alias).getEncoded());
-	System.out.println("CERT: " + certificate);
 	
 	PublicKey publicKey = certificate.getPublicKey();
-	System.out.println("pk: " + publicKey);
 	
 	// TODO: is it subject or issuer?
 	Principal ourDN = certificate.getSubjectX500Principal();
-	System.out.println("DN: " + ourDN);
 
 	// . . .
-
+	System.out.println("Passed things " + serverDN);
 	/*
 	iaik.x509.X509Certificate serverCertificate = // . . .
 

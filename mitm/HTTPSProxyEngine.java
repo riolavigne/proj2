@@ -145,7 +145,8 @@ public class HTTPSProxyEngine extends ProxyEngine
 		    try {
 			//Lookup the "common name" field of the certificate from the remote server:
 			remoteSocket = (SSLSocket)
-			    m_proxySSLEngine.getSocketFactory().createClientSocket(remoteHost, remotePort);
+			    m_proxySSLEngine.getSocketFactory().
+			    createClientSocket(remoteHost, remotePort);
 		    } catch (IOException ioe) {
 			ioe.printStackTrace();
 			// Try to be nice and send a reasonable error message to client
@@ -157,11 +158,17 @@ public class HTTPSProxyEngine extends ProxyEngine
 		    //   so that we can copy those values in the certificate that we forge.
 		    //   (Recall that we, as a MITM, obtain the server's actual certificate from our own session as a client
 		    //    to that server.)
-		    javax.security.cert.X509Certificate[] serverCertChain = null;
-		    iaik.x509.X509Certificate serverCertificate = null;
-		    Principal serverDN = null;
-		    BigInteger serverSerialNumber = null;
+		    SSLSession remoteSession = remoteSocket.getSession();
+		    javax.security.cert.X509Certificate[] serverCertChain = 
+			remoteSession.getPeerCertificateChain();
+		    iaik.x509.X509Certificate serverCertificate = new 
+			iaik.x509.X509Certificate(remoteSession.getPeerCertificates()[0].
+						  getEncoded());
+		    Principal serverDN = serverCertificate.getSubjectDN();
+		    BigInteger serverSerialNumber = serverCertificate.getSerialNumber();
 
+		    System.out.println("here we are... " + serverDN + 
+		    		       "\n\n" + serverCertChain[1].getIssuerDN());
 
 		    //We've already opened the socket, so might as well keep using it:
 		    m_proxySSLEngine.setRemoteSocket(remoteSocket);
@@ -169,6 +176,7 @@ public class HTTPSProxyEngine extends ProxyEngine
 		    //This is a CRUCIAL step:  we dynamically generate a new cert, based
 		    // on the remote server's DN, and return a reference to the internal
 		    // server socket that will make use of it.
+
 		    ServerSocket localProxy = m_proxySSLEngine.createServerSocket(serverDN, serverSerialNumber);
 
 		    //Kick off a new thread to send/recv data to/from the remote server.
