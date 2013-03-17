@@ -51,10 +51,9 @@ class MITMAdminServer implements Runnable
 		// parse username and pwd
 		if (userPwdMatcher.find()) {
 		    String password = userPwdMatcher.group(1);
-
+		    //hashNewPwd();
 		    // TODO(cs255): authenticate the user
-
-		    boolean authenticated = true;
+		    boolean authenticated = checkPwd(password);
 
 		    // if authenticated, do the command
 		    if( authenticated ) {
@@ -62,8 +61,10 @@ class MITMAdminServer implements Runnable
 			String commonName = userPwdMatcher.group(3);
 
 			doCommand( command );
+		    } else {
+			sendString("Password does not match.");
 		    }
-		}	
+		}
 	    }
 	    catch( InterruptedIOException e ) {
 	    }
@@ -71,6 +72,37 @@ class MITMAdminServer implements Runnable
 		e.printStackTrace();
 	    }
 	}
+    }
+    
+    private Boolean checkPwd(String password) {
+	String hashed = "";
+	String salt = "";
+	try {
+	    BufferedReader br = new BufferedReader(new FileReader("pwdfile"));
+	    hashed = br.readLine();
+	    br.close();
+	} catch (Exception e) {
+	    System.err.println("FAILURE reading file pwdfile:\n" + e);
+	}
+	return BCrypt.checkpw(password, hashed);
+    }
+    
+    // get rid of this before submitting. creates a new password hash hardcoded.
+    private void hashNewPwd() {
+	String authPass = "leekspin";
+	String salt = BCrypt.gensalt(12); // 10 log rounds... default. strong enough.
+	String hashed = BCrypt.hashpw(authPass, salt);
+	// write to pwdhash file...
+	try {
+	    Writer out  = new OutputStreamWriter
+	    (new FileOutputStream("pwdFile"), "UTF-8");
+	    BufferedWriter w = new BufferedWriter(out);
+	    out.write(hashed);
+	    out.close();
+	} catch (Exception e) {
+	    System.err.println("FAILURE:\n" + e);
+	}
+	System.out.println("SUCCESS");
     }
 
     private void sendString(final String str) throws IOException {
@@ -80,13 +112,20 @@ class MITMAdminServer implements Runnable
     }
     
     private void doCommand( String cmd ) throws IOException {
-
-	// TODO(cs255): instead of greeting admin client, run the indicated command
-
-	sendString("How are you Admin Client !!");
-
+	if (cmd.equals("shutdown")) {
+	    System.exit(0);
+	} else if (cmd.equals("stats")) {
+	    sendString("Looking for stats...");
+	    int stats = m_engine.stats;
+	    sendString("Number of connections served: " + stats);
+	} else {
+	    sendString("Command, " + cmd + ", not recognized.");
+	    sendString("Valid commands are:\n " +
+		       "stats\n"+
+		       "shutdown"
+		       );
+	}
 	m_socket.close();
-	
     }
 
 }

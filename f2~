@@ -1,0 +1,37 @@
+Admin server initialized, listening on port 8002
+SERIAL NUMBER:
+96897982253449999318325
+SERVER CERT:
+Version: 1
+Serial number: 96897982253449999318325
+Signature algorithm: dsaWithSHA (1.2.840.10040.4.3) 
+Issuer: CN=Supah Awesome,OU=Best thing evah!,O=Cats.,L=Fish.,ST=Pluto,C=CA
+Valid not before: Fri Mar 08 21:14:04 PST 2013
+      not after: Thu Jun 06 22:14:04 PDT 2013
+Subject: CN=*.google.com,O=Google Inc,L=Mountain View,ST=California,C=US
+Sun DSA Public Key
+    Parameters:DSA
+	p:     fd7f5381 1d751229 52df4a9c 2eece4e7 f611b752 3cef4400 c31e3f80 b6512669
+    455d4022 51fb593d 8d58fabf c5f5ba30 f6cb9b55 6cd7813b 801d346f f26660b7
+    6b9950a5 a49f9fe8 047b1022 c24fbba9 d7feb7c6 1bf83b57 e7c6a8a6 150f04fb
+    83f6d3c5 1ec30235 54135a16 9132f675 f3ae2b61 d72aeff2 2203199d d14801c7
+	q:     9760508f 15230bcc b292b982 a2eb840b f0581cf5
+	g:     f7e1a085 d69b3dde cbbcab5c 36b857b9 7994afbb fa3aea82 f9574c0b 3d078267
+    5159578e bad4594f e6710710 8180b449 167123e8 4c281613 b7cf0932 8cc8a6e1
+    3c167a8b 547c8d28 e0a3ae1e 2bb3a675 916ea37f 0bfa2135 62f1fb62 7a01243b
+    cca4f1be a8519089 a883dfe1 5ae59f06 928b665e 807b5525 64014c3b fecf492a
+
+  y:
+    808ae63a db0a13fd 9dc66873 3a8c093b 3fbb03cc 063536fd 96cc53d9 ec3e63e6
+    873331b1 40df8675 6cdbd904 904d5b52 ba9c359f 0b0c61f5 f3d7b080 c7d9ffe3
+    c1bc19f5 c4e16efe 10ccb3c9 0c5f1e18 55401d47 9386eef0 0058ad34 a6fc1b65
+    72bbc192 4a7194fe e547600f 04368fdc 878f1b56 4f4cfa74 9e77daf2 24e0e251
+
+Certificate Fingerprint (MD5)  : 5E:46:AD:0A:5C:CA:C8:28:A8:5A:83:C7:BA:E6:F5:8C
+Certificate Fingerprint (SHA-1): CC:14:AD:93:8D:72:AE:98:3E:09:1F:DE:FB:8B:16:84:98:0C:02:98
+
+
+--- localhost:61000->google.com:443 opened --
+--- google.com:443->localhost:61000 opened --
+--- localhost:61000->google.com:443 closed --
+--- google.com:443->localhost:61000 closed --

@@ -51,13 +51,16 @@ public class HTTPSProxyEngine extends ProxyEngine
 
     public static final String ACCEPT_TIMEOUT_MESSAGE = "Listen time out";
 
+    public int stats;
+
     private String m_tempRemoteHost;
     private int m_tempRemotePort;
 
     private final Pattern m_httpsConnectPattern;
 
     private final ProxySSLEngine m_proxySSLEngine;
-    
+   
+
     public HTTPSProxyEngine(MITMPlainSocketFactory plainSocketFactory,
 			    MITMSSLSocketFactory sslSocketFactory,
 			    ProxyDataFilter requestFilter,
@@ -91,7 +94,8 @@ public class HTTPSProxyEngine extends ProxyEngine
 
 	assert sslSocketFactory != null;
 	m_proxySSLEngine = new ProxySSLEngine(sslSocketFactory, requestFilter, responseFilter);
-
+	// initialize statistics to 0 first...
+	stats = 0;
     }
 
     public void run()
@@ -137,6 +141,7 @@ public class HTTPSProxyEngine extends ProxyEngine
 		    final String target = remoteHost + ":" + remotePort;
 
 		    System.err.println("******* Establishing a new HTTPS proxy connection to " + target);
+		    stats++;
 
 		    m_tempRemoteHost = remoteHost;
 		    m_tempRemotePort = remotePort;
@@ -154,21 +159,19 @@ public class HTTPSProxyEngine extends ProxyEngine
 			continue;
 		    }
 
-		    // TODO(cs255): get the remote server's Distinguished Name (DN) and serial number from its actual certificate,
-		    //   so that we can copy those values in the certificate that we forge.
-		    //   (Recall that we, as a MITM, obtain the server's actual certificate from our own session as a client
-		    //    to that server.)
+		    // get the remote server's Distinguished Name (DN) and serial number from its actual certificate,
+		    // so that we can copy those values in the certificate that we forge.
+		    // We start by getting the remote session socket to obtain the server's certificate
 		    SSLSession remoteSession = remoteSocket.getSession();
 		    javax.security.cert.X509Certificate[] serverCertChain = 
 			remoteSession.getPeerCertificateChain();
+		    // from the remote session, we extract the relevant (first in the chain) certificate
 		    iaik.x509.X509Certificate serverCertificate = new 
 			iaik.x509.X509Certificate(remoteSession.getPeerCertificates()[0].
 						  getEncoded());
+		    // from the server certificate, ew extrac the subject DN and serial number
 		    Principal serverDN = serverCertificate.getSubjectDN();
 		    BigInteger serverSerialNumber = serverCertificate.getSerialNumber();
-
-		    System.out.println("here we are... " + serverDN + 
-		    		       "\n\n" + serverCertChain[1].getIssuerDN());
 
 		    //We've already opened the socket, so might as well keep using it:
 		    m_proxySSLEngine.setRemoteSocket(remoteSocket);
@@ -272,7 +275,6 @@ public class HTTPSProxyEngine extends ProxyEngine
 	    m_serverSocket = ssf.createServerSocket("localhost", 0, timeout);
 	    return m_serverSocket;
 	}
-
 
 	/*
 	 * localSocket.get[In|Out]putStream() is data that's (indirectly)

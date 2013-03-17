@@ -42,6 +42,7 @@ import javax.net.ssl.X509TrustManager;
  */
 public final class MITMSSLSocketFactory implements MITMSocketFactory
 {
+    // TODO: Why do I need final keyword? It's not working... BLARGH
     final ServerSocketFactory m_serverSocketFactory;
     final SocketFactory m_clientSocketFactory;
     final SSLContext m_sslContext;
@@ -102,15 +103,15 @@ public final class MITMSSLSocketFactory implements MITMSocketFactory
     /**
      * This constructor will create an SSL server socket factory
      * that is initialized with a dynamically generated server certificate
-     * that contains the specified Distinguished Name.
+     * that contains the specified ed Name.
      */
     public MITMSSLSocketFactory(Principal serverDN, BigInteger serialNumber)
 	throws IOException,GeneralSecurityException, Exception
     {
-	this();
-        // TODO(cs255): replace this with code to generate a new (forged) server certificate with a DN of serverDN
-        //   and a serial number of serialNumber.
-        
+        // Generates a new (forged) server certificate with a DN of serverDN
+        // and a serial number of serialNumber.
+
+        // Start by opening local keystore with our certificate
 	final String keyStoreFile = System.getProperty(JSSEConstants.KEYSTORE_PROPERTY);
 	final char[] keyStorePassword = System.getProperty(JSSEConstants.KEYSTORE_PASSWORD_PROPERTY, "").toCharArray();
 	final String keyStoreType = System.getProperty(JSSEConstants.KEYSTORE_TYPE_PROPERTY, "jks");
@@ -132,46 +133,54 @@ public final class MITMSSLSocketFactory implements MITMSocketFactory
 	// Get our key pair and our own DN (not the remote server's DN) from the keystore.
 	PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, keyStorePassword); 
 	
+	// generate our certificate based on the keystore data
 	iaik.x509.X509Certificate certificate = new
 	    iaik.x509.X509Certificate(keyStore.getCertificate(alias).getEncoded());
 	
-	PublicKey publicKey = certificate.getPublicKey();
-	
-	// TODO: is it subject or issuer?
-	Principal ourDN = certificate.getSubjectX500Principal();
-
+	// Generate a forged server certificate
 	iaik.x509.X509Certificate serverCertificate = 
-	    getServerCert(certificate, ourDN, serverDN, serialNumber, privateKey);
-
-	// . . .
-	/*
-	  KeyStore serverKeyStore = KeyStore.getInstance(keyStoreType);
-
-	  // . . .
+	    getServerCert(certificate, serverDN, serialNumber, privateKey);
 	
-	  final KeyManagerFactory keyManagerFactory =
-	  KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-	  keyManagerFactory.init(serverKeyStore, emptyPassword);
-
-	  m_sslContext = SSLContext.getInstance("SSL");
-	  m_sslContext.init(keyManagerFactory.getKeyManagers(),
+	// serverKeyStore used for serverCert - for cleaner code
+	KeyStore serverKeyStore = KeyStore.getInstance(keyStoreType);
+	// initialize the key store, use same password as for our keystore
+	serverKeyStore.load(null, keyStorePassword);
+	// create a certificate chain to pass
+	java.security.cert.X509Certificate[] certChain = 
+	    new java.security.cert.X509Certificate[1];
+	certChain[0] = serverCertificate;
+	// add our forged certificate to it + private key...
+	serverKeyStore.setKeyEntry(alias, privateKey, keyStorePassword, certChain);
+	
+	final KeyManagerFactory keyManagerFactory =
+	    KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+	keyManagerFactory.init(serverKeyStore, keyStorePassword);
+        
+	m_sslContext = SSLContext.getInstance("SSL");
+	
+	m_sslContext.init(keyManagerFactory.getKeyManagers(),
 	  new TrustManager[] { new TrustEveryone() },
-	  null);
+			  null);
 
-	  m_clientSocketFactory = // . . .
-	  m_serverSocketFactory = // . . .
-
-	*/
+	m_clientSocketFactory = m_sslContext.getSocketFactory();
+	m_serverSocketFactory = m_sslContext.getServerSocketFactory();
     }
-
-    private iaik.x509.X509Certificate getServerCert(iaik.x509.X509Certificate ourCert, Principal ourDN, Principal serverDN, BigInteger serialNumber, PrivateKey pk) {
+    
+    /**
+     * Generates a forged certificate by copying the passed in certificate,
+     * substituting a date, severDN and serial number, and then signing it.
+     */
+    private iaik.x509.X509Certificate getServerCert(iaik.x509.X509Certificate ourCert, Principal serverDN, BigInteger serialNumber, PrivateKey pk) {
 	try {
 	    iaik.x509.X509Certificate serverCert =
 		new iaik.x509.X509Certificate(ourCert.getEncoded()); // copy our cert
-	    AlgorithmID algo = serverCert.getSignatureAlgorithm();
-
-	    serverCert.setIssuerDN(serverDN);
+	    GregorianCalendar cal = new GregorianCalendar(2013, 1, 1);
+	    serverCert.setValidNotBefore(cal.getTime());
+	    cal.set(2014, 1, 1);
+	    serverCert.setValidNotAfter(cal.getTime());
+	    serverCert.setSubjectDN(serverDN);
 	    serverCert.setSerialNumber(serialNumber);
+	    AlgorithmID algo = ourCert.getSignatureAlgorithm();
 	    serverCert.sign(algo, pk);
 	    return serverCert;
 
